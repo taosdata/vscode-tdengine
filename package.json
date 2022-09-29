@@ -1,0 +1,135 @@
+{
+  "name": "vscode-tdengine",
+  "displayName": "vscode-tdengine",
+  "description": "\"vs-code extension for TDengine 3.0 \"",
+  "icon": "resources/site-logo.png",
+  "version": "0.9.0",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:extension-to-3-0.helloWorld",
+    "onCommand:tdengine-vs-code-extension.showWebview",
+    "onCommand:nodeDependencies.refreshEntry",
+    "onCommand:extension-to-3-0.login"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension-to-3-0.helloWorld",
+        "title": "Hello World"
+      },
+      
+      {
+        "command": "nodeDependencies.refreshEntry",
+        "title": "refresh  World"
+      },
+      {
+        "command": "extension-to-3-0.login",
+        "title": "config"
+      },
+      {
+        "command": "nodeDependencies.refreshEntry",
+        "title": "Refresh",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
+      },
+      {
+        "command": "nodeDependencies.addEntry",
+        "title": "commands window"
+      },
+      {
+        "command": "nodeDependencies.checkTable",
+        "title": "Check",
+        "icon": {
+          "light": "resources/eye.svg",
+          "dark": "resources/eye.svg"
+        }
+      },
+      {
+        "command": "nodeDependencies.deleteEntry",
+        "title": "Delete"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "package-explorer",
+          "title": "TDengine",
+          "icon": "resources/taos.svg"
+        }
+      ]
+    },
+    "views": {
+      "package-explorer": [
+        {
+          "id": "nodeDependencies",
+          "name": "Viewer",
+          "icon": "resources/dep.svg",
+          "contextualTitle": "TDengine"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "nodeDependencies",
+        "contents": "This is TDengine vscode extension find document [here](https://github.com/wjsvec/extension-to-3-0).\n[Start config](command:extension-to-3-0.login)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "nodeDependencies.refreshEntry",
+          "when": "view == nodeDependencies",
+          "group": "navigation"
+        },
+        {
+          "command": "nodeDependencies.addEntry",
+          "when": "view == nodeDependencies"
+        },
+        {
+          "command": "extension-to-3-0.login",
+          "when": "view == nodeDependencies"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "nodeDependencies.checkTable",
+          "when": "view == nodeDependencies && viewItem == tablenode",
+          "group": "inline"
+        },
+        {
+          "command": "nodeDependencies.deleteEntry",
+          "when": "view == nodeDependencies && viewItem == tablenode"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "node ./test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.2.0",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.70.0",
+    "@vscode/test-electron": "^2.1.5",
+    "eslint": "^8.20.0",
+    "glob": "^8.0.3",
+    "mocha": "^10.0.0",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "@tdengine/client": "^3.0.1",
+    "vsce": "^2.11.0"
+  },
+  "publisher": "wjsvec"
+}
