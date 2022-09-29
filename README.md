@@ -5,10 +5,10 @@ This is a vscode extension of tdengine. You can configure the database connectio
 Before using, you should ensure that your device can access [TDengine](https://github.com/taosdata/TDengine) normally. 
 
 ### Install from Market
-You can install the extension from vs-code offical market [here](https://github.com/wjsvec/vscode-tdengine/blob/main/vscode-tdengine-0.9.0.vsix), you can also search extensions in marketplace by "vscode-tdengine".
+You can install the extension from vs-code offical market [here](https://marketplace.visualstudio.com/items?itemName=wjsvec.vscode-tdengine), you can also search extensions in marketplace by "vscode-tdengine".
 
 ### Install from VSIX
-You can also download the VSIX file in the project and install it in the VS Code manually.
+You can also download the [VSIX file](https://github.com/wjsvec/vscode-tdengine/blob/main/vscode-tdengine-0.9.0.vsix) in the project and install it in the VS Code manually.
 ![image.png](https://s2.loli.net/2022/09/29/DqG2CPjiNlVUyha.png)
 
 ## How to use
