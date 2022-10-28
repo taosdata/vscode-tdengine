@@ -3,7 +3,7 @@
   "displayName": "vscode-tdengine",
   "description": "\"vs-code extension for TDengine 3.0 \"",
   "icon": "resources/site-logo.png",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "engines": {
     "vscode": "^1.70.0"
   },
@@ -42,7 +42,11 @@
       },
       {
         "command": "nodeDependencies.addEntry",
-        "title": "commands window"
+        "title": "commands window",
+        "icon": {
+          "light": "resources/light/terminal_cmd.svg",
+          "dark": "resources/dark/terminal_cmd.svg"
+        }
       },
       {
         "command": "nodeDependencies.checkTable",
@@ -91,7 +95,8 @@
         },
         {
           "command": "nodeDependencies.addEntry",
-          "when": "view == nodeDependencies"
+          "when": "view == nodeDependencies",
+          "group": "navigation"
         },
         {
           "command": "extension-to-3-0.login",
