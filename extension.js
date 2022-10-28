@@ -173,7 +173,7 @@ function activate(context) {
             });
             var cursor = conn.cursor()
             let mem = ''
-            command_panel.webview.html = await get_command_window(mem);
+            command_panel.webview.html = await get_command_window(mem,'');
             command_panel.webview.onDidReceiveMessage(
                 async message => {
                     switch (message.command) {
@@ -181,10 +181,33 @@ function activate(context) {
                             
                             
                             try{
-                                let query_text = await executeSql(message.sql_command,0,cursor)
-                                console.log(query_text);
-                                mem += query_text+'<br/>'
-                                command_panel.webview.html = await get_command_window(mem);
+                                if(message.sql_command.slice(0,6) === 'select'){
+                                    let sql_cmd;
+                                    // vscode.window.showErrorMessage(message.sql_command +" is not a lygal SQL");
+                                    if (message.sql_command.match('limit') ){
+                                        sql_cmd= message.sql_command;
+                                    }
+                                    else{
+                                        sql_cmd = message.sql_command.slice(0,-1)+' limit 0,50;' 
+                                    }
+                                    console.log(sql_cmd);
+                                    let query_text = await select_HTML(sql_cmd,cursor)
+                                    mem += query_text;
+
+                                }
+                                else if(message.sql_command === 'clear'){
+                                    mem = ''
+
+                                }
+                                else{
+                                    let query_text = await executeSql(message.sql_command,0,cursor)
+                                    console.log(query_text);                                
+                                    mem += '<h3>'+query_text+'<br/>' +'</h3>'
+
+                                    
+                                }
+                                command_panel.webview.html = await get_command_window(mem,message.sql_command);
+                                
                             }
                             catch (e){
                                 vscode.window.showErrorMessage(message.sql_command +" is not a lygal SQL");
@@ -231,6 +254,7 @@ function activate(context) {
         // console.log(query_text);
         table_panel.webview.onDidReceiveMessage(
             async message => {
+                let query_text;
                 switch (message.command) {
                     case 'alert':
                         var conn = taos.connect({
@@ -244,12 +268,12 @@ function activate(context) {
                         var cursor = conn.cursor()
                         // vscode.window.showInformationMessage(message.sort_item);
                         if( message.sort_item === 'default'){
-                            let query_text = await executeQuery_get_html("select * from " + node['frombase'] + "." + node['label']+ " limit 0,10", cursor, true)
+                            query_text = await executeQuery_get_html("select * from " + node['frombase'] + "." + node['label']+ " limit 0,10", cursor, true)
                             
                             
                             return;
                         }
-                        let query_text;
+                        
                         if(message.order ==="ASC"){
                             query_text = await executeQuery_get_html("select * from " + node['frombase'] + "." + node['label']+" order by "+ message.sort_item+ " limit 0,10", cursor, true)
 
@@ -259,6 +283,35 @@ function activate(context) {
 
                         }
                         // console.log("select * from " + node['frombase'] + "." + node['label']+" order by "+ message.sort_item+ " limit 0,10")
+                        table_panel.webview.html = query_text;
+                        return;
+                    case 'sort_up':
+                        var conn = taos.connect({
+                            host: connect_td['_host'],
+                            user: connect_td['_user'],
+                            password: connect_td['_password'],
+                            config: connect_td['_config'],
+                            port: connect_td['_port'],
+                        });
+                        
+                        var cursor = conn.cursor()
+                        query_text = await executeQuery_get_html("select * from " + node['frombase'] + "." + node['label']+" order by "+ message.sort_i+ " limit 0,10", cursor, true)
+                        // vscode.window.showInformationMessage(message.sort_i);
+                        table_panel.webview.html = query_text;
+                        console.log('soortup');
+                        return;
+                    case 'sort_down':
+                        var conn = taos.connect({
+                            host: connect_td['_host'],
+                            user: connect_td['_user'],
+                            password: connect_td['_password'],
+                            config: connect_td['_config'],
+                            port: connect_td['_port'],
+                        });
+                        var cursor = conn.cursor()
+                        query_text = await executeQuery_get_html("select * from " + node['frombase'] + "." + node['label']+" order by "+ message.sort_i+ " DESC limit 0,10", cursor, true)
+                        // vscode.window.showInformationMessage(message.sort_i);
+                        console.log('soortup');
                         table_panel.webview.html = query_text;
                         return;
                 }
@@ -346,6 +399,51 @@ function printSql(sql, succeed, cost) {
     console.log("[ " + (succeed ? "OK" : "ERROR!") + " ] time cost: " + cost + " ms, execute statement ====> " + sql);
     return "[ " + (succeed ? "OK" : "ERROR!") + " ] time cost: " + cost + " ms, execute statement ====> " + sql;
 }
+async function select_HTML(sql,cursor){
+    var start = new Date().getTime();
+    var promise = cursor.query(sql, true);
+    var end = new Date().getTime();
+    
+
+    let test = await promise.then(function (result) {
+
+        let res = ['','<thead><tr>','<tbody>',''];
+        res[3] += '<div class="row"> <div class="col-sm-8 "><select class="form-select" id="sort_item" name="sort_item"><option value="default">Default</option>'
+        res[0] = printSql(sql, result != null, (end - start));
+        console.log(result);
+        let fields = result['fields'];
+        let data = result['data'];
+
+        for(let i =0; i < fields.length;i++){
+            res[1] += `<th > `+ String(fields[i]['name'])+`</th>`
+            res[3] += `<option value="`+String(fields[i]['name'])+`">`+String(fields[i]['name'])+`</option>`
+        }
+        res[1] += `</tr></thead>`
+        console.log(data);
+        for (let i = 0;i< data.length;i++){
+            
+            let TaosRow_data = data[i]['data'];
+            res[2] += "<tr>"
+            for(let j = 0; j <TaosRow_data.length;j++){
+                res[2] += "<td>"+ String(TaosRow_data[j])+"</td>"
+
+            }
+
+            res[2] += '</tr>'
+        }
+        res[2] += "</tbody>"
+        res[3] += `</select></div><div class="col-sm-2 "><button type="button" class="btn btn-light" onclick="myFunction()">Sort by</button></div>`
+
+        result.pretty();
+
+        return res;
+    });
+    return `<table class="table table-dark table-striped table-hover">
+    ` + test[1] + `
+    ` + test[2] + `
+    </table>`;
+
+}
 
 async function executeQuery_get_html(sql, cursor, if_print = false) {
     var start = new Date().getTime();
@@ -363,9 +461,32 @@ async function executeQuery_get_html(sql, cursor, if_print = false) {
         let data = result['data'];
 
         for(let i =0; i < fields.length;i++){
-            res[1] += "<th>"+ String(fields[i]['name'])+"</th>"
+            res[1] += `<th > <div class="row"><div class="col-sm-7 ">`+ String(fields[i]['name'])+`</div>
+            <div class="col-sm-1 "></div>
+            <div class="col-sm-1 ">
+            <button onclick='myFunction2("`+String(fields[i]['name'])+`")' type="button" class="btn btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-sort-down" viewBox="0 0 16 16">
+<path d="M3.5 2.5a.5.5 0 0 0-1 0v8.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 1.999.007.007a.497.497 0 0 0 .7-.006l2-2a.5.5 0 0 0-.707-.708L3.5 11.293V2.5zm3.5 1a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zM7.5 6a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zm0 3a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3zm0 3a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1h-1z"/>
+</svg>
+          </button></div>
+          <div class="col-sm-1 ">
+          <button onclick='myFunction1("`+String(fields[i]['name'])+`")' type="button" class="btn btn-secondary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-sort-down-alt" viewBox="0 0 16 16">
+          <path d="M3.5 3.5a.5.5 0 0 0-1 0v8.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 1.999.007.007a.497.497 0 0 0 .7-.006l2-2a.5.5 0 0 0-.707-.708L3.5 12.293V3.5zm4 .5a.5.5 0 0 1 0-1h1a.5.5 0 0 1 0 1h-1zm0 3a.5.5 0 0 1 0-1h3a.5.5 0 0 1 0 1h-3zm0 3a.5.5 0 0 1 0-1h5a.5.5 0 0 1 0 1h-5zM7 12.5a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7a.5.5 0 0 0-.5.5z"/>
+          </svg>
+        </button>
+        </div></div>
+        
+          `+"</th>"
             res[3] += `<option value="`+String(fields[i]['name'])+`">`+String(fields[i]['name'])+`</option>`
         }
+        // 
+        // <svg  onclick='myFunction2("`+String(fields[i]['name'])+`")' xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-sort-down" viewBox="0 0 16 16">
+        //     <path d="M3.5 2.5a.5.5 0 0 0-1 0v8.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 1.999.007.007a.497.497 0 0 0 .7-.006l2-2a.5.5 0 0 0-.707-.708L3.5 11.293V2.5zm3.5 1a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zM7.5 6a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zm0 3a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3zm0 3a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1h-1z"/>
+        //     </svg>
+        //     <svg onclick='myFunction1("`+String(fields[i]['name'])+`")' xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-sort-down-alt" viewBox="0 0 16 16">
+        //     <path d="M3.5 3.5a.5.5 0 0 0-1 0v8.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 1.999.007.007a.497.497 0 0 0 .7-.006l2-2a.5.5 0 0 0-.707-.708L3.5 12.293V3.5zm4 .5a.5.5 0 0 1 0-1h1a.5.5 0 0 1 0 1h-1zm0 3a.5.5 0 0 1 0-1h3a.5.5 0 0 1 0 1h-3zm0 3a.5.5 0 0 1 0-1h5a.5.5 0 0 1 0 1h-5zM7 12.5a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7a.5.5 0 0 0-.5.5z"/>
+        //     </svg>
         res[1] += `</tr></thead>`
         console.log(data);
         for (let i = 0;i< data.length;i++){
@@ -385,6 +506,7 @@ async function executeQuery_get_html(sql, cursor, if_print = false) {
 
         return res;
     });
+
     return `<!DOCTYPE html>
   <html lang="en">
   <head>
@@ -397,6 +519,7 @@ async function executeQuery_get_html(sql, cursor, if_print = false) {
   <body style="background-color:rgba(0,0,0)" >
   <div class="bg-black text-white">
      <h3 >` + test[0] + `</h3>
+     
      <table class="table table-dark table-striped table-hover">
 	  ` + test[1] + `
       ` + test[2] + `
@@ -410,6 +533,7 @@ async function executeQuery_get_html(sql, cursor, if_print = false) {
         </div>
       </div>
       
+      
      
   
       <script>
@@ -421,6 +545,24 @@ async function executeQuery_get_html(sql, cursor, if_print = false) {
               command: 'alert',
               sort_item:document.getElementById("sort_item").value,
               order:document.getElementById("order").value,
+          });
+          document.getElementById("demo").innerHTML="配置有误，请重新尝试!";
+      }
+      function myFunction1(sortable)
+      {   
+          
+          vscode.postMessage({
+              command: 'sort_up',
+              sort_i:sortable,
+          });
+          document.getElementById("demo").innerHTML="配置有误，请重新尝试!";
+      }
+      function myFunction2(sortable)
+      {   
+          
+          vscode.postMessage({
+              command: 'sort_down',
+              sort_i:sortable,
           });
           document.getElementById("demo").innerHTML="配置有误，请重新尝试!";
       }
@@ -443,23 +585,30 @@ function getLoginContent() {
 </head>
 <body style="background-color:rgba(0,0,0)">
 <div class="bg-black text-white">
-    <img src="https://www.taosdata.com/wp-content/uploads/2022/02/site-logo.png" width="300" />
     
-	<h2 id="demo">Please input: </h2>
+    <div class="row">
+	
 
 	
-	
-	
-    <table   class="table table-dark table-hover" style="width:500px" >
+	<div class="col-sm-3 p-3 "></div>
+    
+    <div class="col-sm-6 p-3">
+    <img src="https://www.taosdata.com/wp-content/uploads/2022/02/site-logo.png" width="300" />
+	<h2 id="demo">Please input: </h2>
+    <table   class="table table-dark table-striped table-hover" style="width:500px" >
 	<tr><td>host:</td><td><input id="host" type="text" value= "127.0.0.1" name="host"><br> </td></tr>
 	<tr><td>user:</td>  <td><input id="username" type="text" value= "root" name="user"><br> </td></tr>
 	<tr><td>Password: </td><td><input id = 'password' type="password" value= "taosdata" name="password"><br> </td></tr>
 	<tr><td>config:</td><td><input id="config" type="text" value= "/etc/taos" name="config"><br> </td></tr>
 	<tr><td>port:</td><td><input id="port" type="text" value= "0" name="port"><br></td></tr>
 </table>
+<button class="btn btn-light" type="button" onclick="myFunction()">Submit !</button>
+</div>
+    <div class="col-sm-3 p-3"></div>
 	
 </div>
-<button class="btn btn-light" type="button" onclick="myFunction()">Submit !</button>
+
+</div>
 
     <script>
 	const vscode = acquireVsCodeApi();
@@ -483,7 +632,7 @@ function getLoginContent() {
 </html>`;
 }
 
-async function get_command_window(sql_res) {
+async function get_command_window(sql_res,sql_mem) {
     
 
     return `<!DOCTYPE html>
@@ -498,11 +647,12 @@ async function get_command_window(sql_res) {
 </head>
   <body style="background-color:rgba(0,0,0)">
   <div class="bg-black text-white">
-  <div class="row">
-    <div class="col-sm-4 "><input id="sql_command" type="text" value= "" name="sql_command"></div>
-    <div class="col-sm-4 "> <button class="btn btn-light" type="button" onclick="myFunction()">Excute sql</button></div>
+  <div class="row" >
+    <div class="col-sm-8 " ><textarea style="height:300px;width:1000px;" id="sql_command" type="text" placeholder= "`+sql_mem+`" name="sql_command" ></textarea></div>
+    
     </div>
-	  <h3 >` + sql_res + `</h3>
+    <div class="col-sm-4 "> <button class="btn btn-light" type="button" onclick="myFunction()">Excute sql</button></div>
+	  ` + sql_res + `
   </div>
 	  <script>
 	const vscode = acquireVsCodeApi();
@@ -517,6 +667,8 @@ async function get_command_window(sql_res) {
     </script>
   </body>
   </html>`;
+  //     <textarea rows="4" placeholder="【注意】&#10;这是一段换行测试文本；&#10;换行；&#10;换行；&#10;换行；&#10;换行；">
+// 
 }
 
 class TreeBaseShower {
