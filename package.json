@@ -83,7 +83,7 @@
     "viewsWelcome": [
       {
         "view": "nodeDependencies",
-        "contents": "This is TDengine vscode extension find document [here](https://github.com/wjsvec/extension-to-3-0).\n[Start config](command:extension-to-3-0.login)"
+        "contents": "This is TDengine vscode extension find document [here](https://github.com/taosdata/vscode-tdengine).\n[Start config](command:extension-to-3-0.login)"
       }
     ],
     "menus": {
