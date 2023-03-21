@@ -25,3 +25,5 @@ You can also download the [VSIX file](https://github.com/wjsvec/vscode-tdengine/
 4. Input the SQL you want use
 ![image.png](https://s2.loli.net/2022/09/29/Motw3pLklrEjvYH.png)
 ![image.png](https://s2.loli.net/2022/09/29/ZrQl1y6j5bDC9FM.png)
+
+!Note: There may be some issues with this plugin in Ubuntu, related to the rendering of the Vscode webview module. We are trying to resolve this issue.

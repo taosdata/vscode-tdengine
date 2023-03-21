@@ -26,6 +26,7 @@ function activate(context) {
             var data_list = await get_database_list(cursor);
             console.log(data_list);
             let data_dict = {};
+            
 
             // 这段运行慢暂时注释
             for (let db of data_list) {
@@ -34,6 +35,8 @@ function activate(context) {
                 data_dict[db] = await t2;
                 console.log(data_dict);
             }
+            
+
 
 
             var promise = cursor.query("SHOW DATABASES;", true);
@@ -96,6 +99,11 @@ function activate(context) {
                 	data_dict[db] = [];
                 	console.log(data_dict);
                 }
+                if (Object.keys(data_list).length === 0) {
+                    vscode.window.showErrorMessage("There is no database in TDengine!!!")
+                  }else {
+                    
+                  }
 
 
                 var promise= cursor.query("SHOW DATABASES;", true);
