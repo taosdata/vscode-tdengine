@@ -23,7 +23,6 @@
         "command": "extension-to-3-0.helloWorld",
         "title": "Hello World"
       },
-      
       {
         "command": "nodeDependencies.refreshEntry",
         "title": "refresh  World"
@@ -134,8 +133,11 @@
   },
   "dependencies": {
     "@tdengine/client": "^3.0.1",
+    "openai": "^3.2.1",
     "vsce": "^2.11.0"
   },
   "publisher": "wjsvec",
-  "repository": {"url": "https://github.com/taosdata/vscode-tdengine"}
+  "repository": {
+    "url": "https://github.com/taosdata/vscode-tdengine"
+  }
 }
